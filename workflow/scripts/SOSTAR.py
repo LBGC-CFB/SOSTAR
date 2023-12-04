@@ -12,8 +12,8 @@ def get_arguments():
                         help='/path/to/gtf files')
     parser.add_argument('-O', '--output', dest='output', type=str,
                         help='/path/to/output directory')
-    parser.add_argument('-R', '--ref_bed_coord', dest='ref_bed_coord', type=str,
-                        help='bed annotation file filtered on prefered transcript')
+    parser.add_argument('-R', '--ref_gtf_coord', dest='ref_gtf_coord', type=str,
+                        help='gtf annotation file filtered on reference transcripts')
     return parser.parse_args()
 
 
@@ -339,13 +339,13 @@ def main():
     args = get_arguments()
     indir = os.path.realpath(args.input)
     outdir = os.path.realpath(args.output)
-    ref_bed = os.path.realpath(args.ref_bed_coord)
+    ref_gtf = os.path.realpath(args.ref_gtf_coord)
 
     if not os.path.isdir(outdir):
         os.mkdir(outdir)
 
     # annotate isoforms
-    annotate_isoforms(indir=indir, ref_file=ref_bed, outdir=outdir)
+    annotate_isoforms(indir=indir, ref_file=ref_gtf, outdir=outdir)
 
     step = f"--- Program {os.path.basename(__file__)} executed in {round((float(time.time() - start_time) / 60), 2)} minutes ---"; print(step)
 
