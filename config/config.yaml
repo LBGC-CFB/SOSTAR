@@ -1,0 +1,24 @@
+# reference files
+refs:
+  genome: ../tests/hg19_chr17.fa
+  ensembl_annot: ../tests/gencode.v19.annotation_chr17.gtf
+  transcripts_list: ../tests/reference_transcripts_chr17.txt
+
+#directories
+dirs:
+  indir: ../tests/fastq
+  outdir: /mnt/data/auccam/LoRID_smk_test_new_files_bi
+
+#samples
+samples:
+  - barcode01
+  - barcode13
+  - barcode25
+  - barcode37
+
+#threads
+threads: 35
+
+#options
+options:
+  bedtools: true
