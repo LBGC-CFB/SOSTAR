@@ -168,7 +168,7 @@ def annotate_isoforms(indir, ref_file, outdir):
                     if gene:
                         list_exon_found = sorted(list_exon_found, key=get_ex_nb)
                         list_exon_found = check_intro(list_exon_found, dic_tr_ref, gene)
-                        list_exon_nb_found = list(set([get_ex_nb(exon) for exon in list_exon_found if "exo" not in exon or "int" not in exon]))
+                        list_exon_nb_found = list(set([get_ex_nb(exon) for exon in list_exon_found if not (("exo" in exon) or ("int" in exon))]))
                         list_annot_keep = [ex for ex in list_exon_found if not ex.isdigit() is True]
                         list_exon_nb_ref = list(range(1, exon_count_ref + 1))
                         
@@ -305,7 +305,7 @@ def annotate_isoforms(indir, ref_file, outdir):
 
             list_exon_found = sorted(list_exon_found, key=get_ex_nb)
             list_exon_found = check_intro(list_exon_found, dic_tr_ref, gene)
-            list_exon_nb_found = list(set([get_ex_nb(exon) for exon in list_exon_found if "exo" not in exon or "int" not in exon]))
+            list_exon_nb_found = list(set([get_ex_nb(exon) for exon in list_exon_found if not (("exo" in exon) or ("int" in exon))]))
             list_annot_keep = [ex for ex in list_exon_found if not ex.isdigit() is True]
             list_exon_nb_ref = list(range(1, exon_count_ref + 1))
             
