@@ -10,7 +10,7 @@ rule align:
   threads: 
     config['threads']
   container:
-    "docker://aucam/lorid:latest"
+    "docker://nedss/lorid:latest"
   shell:
     """
     minimap2 \
@@ -51,7 +51,7 @@ rule realign:
   threads:
     config['threads']
   container:
-    "docker://aucam/lorid:latest"
+    "docker://nedss/lorid:latest"
   shell:
     """
     minimap2 \
