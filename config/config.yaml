@@ -7,7 +7,7 @@ refs:
 #directories
 dirs:
   indir: ../tests/fastq
-  outdir: /mnt/data/auccam/LoRID_smk_test_new_files_bi
+  outdir: /mnt/data/auccam/SOSTAR_demo_test
 
 #samples
 samples:
