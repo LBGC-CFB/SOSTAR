@@ -64,7 +64,8 @@ def check_intro(lst, dic_tr_ref, gene):
                 return lst
             elif ("," in lst[0]) or("," in lst[1]):
                 ex_nb = get_ex_nb(lst[0])
-                ex_length = int(dic_tr_ref[gene][ex_nb-1][1]) - int(dic_tr_ref[gene][ex_nb-1][0]) +1
+                ind_exnb = int("".join([str(dic_tr_ref[gene].index(ex)) for ex in dic_tr_ref[gene] if str(ex_nb) in ex]))
+                ex_length = int(dic_tr_ref[gene][ind_exnb][1]) - int(dic_tr_ref[gene][ind_exnb][0]) +1
                 for ele in lst[:2]:
                     if "," in ele:
                         ele=ele.split(",")
@@ -78,7 +79,8 @@ def check_intro(lst, dic_tr_ref, gene):
                 value = str(ex_nb) + "int(" + str(nb_int) +")[q"+str(nb_q)+",p"+str(nb_p)+"],"+keep
             else:
                 ex_nb = get_ex_nb(lst[0])
-                ex_length = int(dic_tr_ref[gene][ex_nb-1][1]) - int(dic_tr_ref[gene][ex_nb-1][0]) +1
+                ind_exnb = int("".join([str(dic_tr_ref[gene].index(ex)) for ex in dic_tr_ref[gene] if str(ex_nb) in ex]))
+                ex_length = int(dic_tr_ref[gene][ind_exnb][1]) - int(dic_tr_ref[gene][ind_exnb][0]) +1
                 nb_p = int(lst[0][lst[0].index("(")+1:lst[0].index(")")] if "p" in lst[0] else lst[1][lst[1].index("(")+1:lst[1].index(")")])
                 nb_q = int(lst[0][lst[0].index("(")+1:lst[0].index(")")] if "q" in lst[0] else lst[1][lst[1].index("(")+1:lst[1].index(")")])
                 nb_int = ex_length - ((ex_length-nb_p)+(ex_length-nb_q))
@@ -136,7 +138,7 @@ def annotate_isoforms(indir, ref_file, outdir):
     """
     #get dictionnary from bed transcript reference in form
     #dico = {gene: [[start_exon1, end_exon1, nb_exon1], [start_exon2, end_exon2, nb_exon2], [start_exon3, end_exon3, nb_exon3]], ...}
-    dic_tr_ref = {}
+    dic_tr_ref = {}; stop_codon = False
     with open(ref_file, "r") as gtfile:
         for line in gtfile:
             if not line.startswith("#"):
@@ -144,11 +146,22 @@ def annotate_isoforms(indir, ref_file, outdir):
                 lines = line.split()
                 gene = dic_attr["gene_name"]
                 if lines[2] == "transcript":
+                    stop_codon = False
                     dic_tr_ref.setdefault(gene, [])
                 if lines[2] == "exon":
-                    dic_tr_ref[gene].append([lines[3], lines[4], dic_attr["exon_number"]])
+                    if not stop_codon:
+                        if gene == "BRCA1":
+                            if int(dic_attr["exon_number"])>3:
+                                dic_tr_ref[gene].append([lines[3], lines[4], str(int(dic_attr["exon_number"])+1)])
+                            else:
+                                dic_tr_ref[gene].append([lines[3], lines[4], dic_attr["exon_number"]])
+                        else:
+                            dic_tr_ref[gene].append([lines[3], lines[4], dic_attr["exon_number"]])
+                    else:
+                        continue
+                if lines[2] == "stop_codon":
+                    stop_codon = True
 
-    
     #get gtf files list
     os.chdir(indir)
     gtf_files = sorted(glob.glob("*.gtf"))
@@ -167,10 +180,11 @@ def annotate_isoforms(indir, ref_file, outdir):
                 if (lines[2] == "transcript") and (lines[6] != "."):
                     if gene:
                         list_exon_found = sorted(list_exon_found, key=get_ex_nb)
+                        #print(f"tr = {transcript_ID}, sample = {filename}, gene = {gene}, list_ex_f = {list_exon_found}, ex_nb = {(exon_nb)}, ex_count_ref = {(exon_count_ref)}, start_ex_stg = {start_exon_stg}, end_ex_stg = {end_exon_stg}")
                         list_exon_found = check_intro(list_exon_found, dic_tr_ref, gene)
                         list_exon_nb_found = list(set([get_ex_nb(exon) for exon in list_exon_found if not ("exo" in exon)]))
                         list_annot_keep = [ex for ex in list_exon_found if not ex.isdigit() is True]
-                        list_exon_nb_ref = list(range(1, exon_count_ref + 1))
+                        list_exon_nb_ref = [int(ex[-1]) for ex in dic_tr_ref[gene]]
                         
                         list_del_exon = sorted([i for i in list_exon_nb_ref if i not in list_exon_nb_found])
                         list_annot_keep.extend("Δ" + str(ex) for ex in list_del_exon)
@@ -192,8 +206,8 @@ def annotate_isoforms(indir, ref_file, outdir):
                     dic_attr = {attr.split()[0]: attr.split()[1].replace('"',"") for attr in line.split("\t")[-1].split(";") if attr.split()}
                     dic_attr["gene_name"] = dic_attr["ref_gene_name"] if ("ref_gene_name" in dic_attr.keys()) else dic_attr["gene_name"]
                     if dic_attr["gene_name"] in dic_tr_ref.keys():
-                        gene = dic_attr["gene_name"]; transcript_ID = dic_attr["transcript_id"]; exon_count_ref = len(dic_tr_ref[gene])
-                        cov = dic_attr["cov"] if dic_attr["cov"] else 1
+                        gene = dic_attr["gene_name"]; transcript_ID = dic_attr["transcript_id"]; exon_count_ref = int(dic_tr_ref[gene][-1][-1])
+                        cov = dic_attr["cov"] if ("cov" in dic_attr.keys()) else 1
                         info = [lines[0], lines[3], lines[4], lines[6], transcript_ID]
                         list_exon_found = []; exon_count = 0
                     else:
@@ -284,6 +298,7 @@ def annotate_isoforms(indir, ref_file, outdir):
                                     if lines[6] == "+":
                                         start_intron_ref = end_exon_ref+1; end_intron_ref = int(dic_tr_ref[gene][count][0])-1; intron_nb = int(exon_ref[2])
                                     elif lines[6] == "-":
+                                        #print(f"tr = {transcript_ID}, sample = {filename}, ex_nb = {type(exon_nb)}, ex_count_ref = {type(exon_count_ref)}, start_ex_stg = {start_exon_stg}, end_ex_stg = {end_exon_stg}")
                                         start_intron_ref = end_exon_ref+1; end_intron_ref = int("-"+dic_tr_ref[gene][count][1])-1; intron_nb = int(exon_ref[2])
                                     #case exonisation part of intron
                                     if start_exon_stg in range(start_intron_ref, end_intron_ref+1):
@@ -307,7 +322,7 @@ def annotate_isoforms(indir, ref_file, outdir):
             list_exon_found = check_intro(list_exon_found, dic_tr_ref, gene)
             list_exon_nb_found = list(set([get_ex_nb(exon) for exon in list_exon_found if not ("exo" in exon)]))
             list_annot_keep = [ex for ex in list_exon_found if not ex.isdigit() is True]
-            list_exon_nb_ref = list(range(1, exon_count_ref + 1))
+            list_exon_nb_ref = [int(ex[-1]) for ex in dic_tr_ref[gene]]
             
             list_del_exon = sorted([i for i in list_exon_nb_ref if i not in list_exon_nb_found])
             list_annot_keep.extend("Δ" + str(ex) for ex in list_del_exon)

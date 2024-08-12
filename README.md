@@ -1,4 +1,4 @@
-# **LoRID** - *Long Read Isoform Discovery*
+# **SOSTAR** - *iSofOrmS annoTAtoR pipeline*
 
 ![Python3](https://img.shields.io/badge/Language-Python3-steelblue)
 ![OS](https://img.shields.io/badge/OS-_Mac_|_Linux-steelblue)
@@ -7,13 +7,13 @@
 ![Stars](https://img.shields.io/github/stars/LBGC-CFB/lorid?style=social)
 
 
-**LoRID** is a versatile pipeline to assemble and describe isoforms from long read sequencing using a new annotation tool called **SOSTAR**: *iSofOrmS annoTAtoR*.
+**SOSTAR** is a versatile pipeline to assemble and describe isoforms from long read sequencing using a new annotation tool.
 The pipeline is divided into two modules that can be run separately. 
 - **First module**: The first module performs alignment (in two rounds) using [minimap2](https://lh3.github.io/minimap2/), assembled isoforms and computed isoform expression using [StringTie](http://ccb.jhu.edu/software/stringtie/index.shtml?t=manual).
 - **Second module**: The second module provides a descriptive and comprehensive annotation of each assembled isoform. 
 Isoforms are described relative to reference transcripts (provided by user) by an annotation including only alternative splicing events.
 
-![LoRID_pipeline](./images/LoRID_pipeline.png)
+![SOSTAR_pipeline](./images/SOSTAR_pipeline.png)
 
 # Requirements
 
@@ -28,10 +28,10 @@ Dependencies:
 
 # Deploy workflow
 
-> Download the Snakefile and rules of LoRID pipeline:
+> Download the Snakefile and rules of SOSTAR pipeline:
 ```
-git clone https://github.com/LBGC-CFB/LoRID.git
-cd ./LoRID
+git clone https://github.com/LBGC-CFB/SOSTAR.git
+cd ./SOSTAR
 ```
 
 # Configure workflow
@@ -65,7 +65,7 @@ snakemake --use-singularity --cores
 
 ## Output directory tree
 ```
-LoRID/outdir
+SOSTAR/outdir
 ├── alignment
 │   └── aligned
 │       ├── {sample}.aligned.bam
@@ -100,9 +100,9 @@ LoRID/outdir
 - `ref_transcripts_annotation.gtf`: <.gtf> annotation file filtered out of reference transcrits specified by the user from ensembl annot.
 - `SOSTAR_annotation_table_results.xlsx`: final output file containing descriptive annotation and expression metrics of each transcript in the cohort (see [SOSTAR annotation output file](##-SOSTAR-annotation-output-file) section for more informations).
 
-# Run SOSTAR module only
+# Run SOSTAR annotation module only
 
-The SOSTAR module can be used as a stand-alone tool, as it is a simple Python script.
+The SOSTAR annotation module can be used as a stand-alone tool, as it is a simple Python script.
 Using <.gtf> files of assembled isoforms from any assembly method, it provides 
 a descriptive and comprehensive annotation of each assembled isoform. 
 This module is compatible with any gtf file using the tag attribute `gene_name` that match 
@@ -143,7 +143,7 @@ ENST00000491747.2 |	17 | 41197695 | 41277373 | - | *BRCA1* | 1-23 | Δ1(14),Δ1q
 
 ## SOSTAR nomenclature
 Isoforms are described relative to reference transcripts (provided by user) by an annotation 
-including **only the alternative splicing events**. SOSTAR uses the **systematic exon numbering**.
+including **only the alternative splicing events**.
 Some conventions were established to annotate the alternative splicing events:
 
 | symbol	| definition	|
@@ -167,4 +167,4 @@ Nomenclature example:
 Camille AUCOUTURIER @AUCAM
 
 # License
-This project is under GPL-3.0 License, see [LICENCE](https://github.com/LBGC-CFB/LoRID/blob/main/LICENSE) for more details.
+This project is under GPL-3.0 License, see [LICENCE](https://github.com/LBGC-CFB/SOSTAR/blob/main/LICENSE) for more details.

@@ -14,17 +14,18 @@ rule get_tr_files:
     with open(input[0], "r") as filin:
       with open(output[0], "w") as filout_gtf:
         with open(output[1], "w") as filout_bed:
-          filout_gtf.write("# LoRID: creation of reference transcripts annotation file\n")
+          filout_gtf.write("# SOSTAR: creation of reference transcripts annotation file\n")
           for line in filin:
             if line.startswith("#"):
               filout_gtf.write(line)
             else:
               dic_attr = {attr.split()[0]: attr.split()[1].replace('"',"") for attr in line.split("\t")[-1].split(";") if attr.split()}
-              if dic_attr["transcript_id"] in tr_list:
-                lines = line.split()
-                filout_gtf.write(line)
-                if lines[2] == "transcript":
-                  filout_bed.write(f"{lines[0]}\t{lines[3]}\t{lines[4]}\t{dic_attr['gene_name']}\t755\t{lines[6]}\n")
+              if "transcript_id" in dic_attr.keys():
+                if dic_attr["transcript_id"] in tr_list:
+                  lines = line.split()
+                  filout_gtf.write(line)
+                  if lines[2] == "transcript":
+                    filout_bed.write(f"{lines[0]}\t{lines[3]}\t{lines[4]}\t{dic_attr['gene_name']}\t755\t{lines[6]}\n")
 
 
 rule bedtools_intersect:
