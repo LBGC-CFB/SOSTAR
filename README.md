@@ -169,6 +169,52 @@ Nomenclature example:
 ![SOSTAR_nomenclature](./images/SOSTAR_nomenclature.png)
 *Black boxes: exon, black lines: intron, red boxes: exon (or part of exon) skipping, green boxes: novel exon (or part of exon).*
 
+## New Features (latest version)
+
+The SOSTAR annotation module has been significantly improved to enhance result readability, interpretation, and isoform prioritization.
+
+### Improved handling of UTR variations
+
+- Variations affecting UTR regions are **excluded from the main annotation table**.
+- When multiple transcripts differ only by UTR variations:
+  - Coverage values are **summed**
+  - Transcript IDs are **merged using “/”**
+- A **dedicated tab preserves the original annotation**, ensuring traceability.
+
+### Transcript Quantification Level (TQL)
+
+A new metric, **TQL**, evaluates the relative contribution of an isoform to gene expression:
+
+
+> **TQL = E(i,j) / Σ E(i,j)**
+
+Where:
+
+E(i,j) = expression of isoform *i* in gene *j*
+
+Σ E(i,j) = total expression of all isoforms of gene *j*
+
+### Z-score metrics
+
+Two Z-score measures were introduced to quantify deviations in expression or TQL relative to the mean (**Zi**) or the median (**Zmi**) observed across the cohort:
+
+
+> **Zi = (xi - μX) / σX**
+
+> **Zmi = (xi - medianX) / σX**
+
+
+### Extended Excel output
+
+| Tab name             | Isoform annotation                  | Value |
+|---------------------|------------------------------------|-------|
+| exp_global          | All isoforms                       | Raw expression |
+| exp_global_smoothed | UTR-cleaned isoforms               | Raw expression |
+| zscore_expglob      | UTR-cleaned isoforms               | Median Z-score expression |
+| tql                 | UTR-cleaned isoforms               | TQL |
+| zscore_tql          | UTR-cleaned isoforms               | Mean Z-score TQL |
+
+
 # Authors
 Camille AUCOUTURIER @AUCAM
 

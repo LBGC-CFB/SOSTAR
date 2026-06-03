@@ -2,7 +2,9 @@ import os
 import time
 import glob
 import argparse
+import statistics
 import pandas as pd
+import numpy as np
 
 
 
@@ -130,6 +132,35 @@ def check_next(lst, previous_values = []):
     else:
         return [lst[0]]
 
+
+def split_annots(chaine):
+    result = []
+    start = 0
+    in_parenthesis = False; in_bracket = False
+    for i, char in enumerate(chaine):
+        if char == '(':
+            in_parenthesis = True
+        elif char == ')':
+            in_parenthesis = False
+        elif char == '-' and not in_parenthesis:
+            result.append(chaine[start:i])
+            start = i + 1
+        elif char == '[':
+            in_bracket = True
+        elif char == ']':
+            in_bracket = False
+        elif char == "," and not in_bracket:
+            result.append(chaine[start:i])
+            start = i + 1
+    result.append(chaine[start:])
+    return result
+
+
+def smooth_UTR(element):
+    if (("Δ" in element) or ("▼" in element)) and (")" in element) and not (set(element) & {"p", "q", "-"}):
+        return None
+    else:
+        return element
 
 
 def annotate_isoforms(indir, ref_file, outdir):
@@ -342,9 +373,71 @@ def annotate_isoforms(indir, ref_file, outdir):
     df.iloc[:,8:] = df.iloc[:,8:].fillna(0)
     df["occurence"] = (df.iloc[:,8:].fillna(0).astype(bool).sum(axis=1)).tolist()
 
-    with pd.ExcelWriter(outdir + "/SOSTAR_annotation_table_results.xlsx") as writer:
-        df.to_excel(writer, index=False)
+    ###########smooth UTRs
+    df_smoothed = pd.DataFrame(columns=df.columns)
+    for _, row in df.iterrows():
+        annot = row["annot_find"]
+        gene = row["gene"]
+        tr_id = row["transcript_id"]
+        annot = split_annots(annot)
+        annot = "-".join(filter(None, map(smooth_UTR,annot)))
+        if not annot:
+            annot = row["annot_ref"]
 
+        if not ((df_smoothed['gene'] == gene) & (df_smoothed['annot_find'] == annot)).any():
+            new_row = row.copy()
+            new_row['annot_find'] = annot
+            df_smoothed = pd.concat([df_smoothed, pd.DataFrame([new_row])], ignore_index=True)
+        else:
+            for sample in df_smoothed.columns[8:-1]:
+                df_smoothed.loc[(df_smoothed['gene'] == gene) & (df_smoothed['annot_find'] == annot), sample] += row[sample]
+            df_smoothed.loc[(df_smoothed['gene'] == gene) & (df_smoothed['annot_find'] == annot), 'transcript_id'] += f"/{tr_id}"
+    df_smoothed["occurence"] = (df_smoothed.iloc[:,8:-1].fillna(0).astype(bool).sum(axis=1)).tolist()
+
+    ###########add zscore calculs
+    df_isosum_gene = df_smoothed.iloc[:,:-1].groupby('gene').transform('sum',numeric_only=True)
+    df_tql = df_smoothed.iloc[:, 8:-1].div(df_isosum_gene, axis=0).mul(100)
+    
+    mean_tql = df_tql.mean(axis=1)
+    std_tql = df_tql.std(axis=1)
+
+    median_global = df_smoothed.iloc[:,8:-1].median(axis=1)
+    std_global = df_smoothed.iloc[:,8:-1].std(axis=1)
+
+    df_zscore_glob = (df_smoothed.iloc[:,8:-1].sub(median_global, axis=0)).div(std_global, axis=0).fillna(0).round(3)
+    df_zscore_tql = (df_tql.sub(mean_tql, axis=0)).div(std_tql, axis=0).fillna(0).round(3)
+
+    df_final_tql = df_smoothed.iloc[:,:-len(gtf_files)-1].join(df_tql.reset_index(drop=True)).drop(["chr", "start", "end", "strand"], axis=1)
+    
+    min_tql = df_tql.min(axis=1).round(2)
+    q25_tql = df_tql.quantile(0.25, axis=1).round(2)
+    q75_tql = df_tql.quantile(0.75, axis=1).round(2)
+    max_tql = df_tql.max(axis=1).round(2)
+
+    df_final_zscore_tql = df_smoothed.iloc[:,:-len(gtf_files)-1].join(df_zscore_tql.reset_index(drop=True)).drop(["chr", "start", "end", "strand"], axis=1)
+    df_final_zscore_tql.insert(4, "occurence", df_smoothed["occurence"])
+    df_final_zscore_tql.insert(5, "mean", mean_tql.round(2))
+    df_final_zscore_tql.insert(6, "min - [Q25, Q75] - max", min_tql.astype(str) + " - [" + q25_tql.astype(str) + ", " + q75_tql.astype(str) + "] - " + max_tql.astype(str))
+    
+    min_global = df_smoothed.iloc[:,8:-1].min(axis=1).round(2)
+    q25_global = df_smoothed.iloc[:,8:-1].quantile(0.25, axis=1).round(2)
+    q75_global = df_smoothed.iloc[:,8:-1].quantile(0.75, axis=1).round(2)
+    max_global = df_smoothed.iloc[:,8:-1].max(axis=1).round(2)
+
+    df_final_zscore_glob = df_smoothed.iloc[:,:-len(gtf_files)-1].join(df_zscore_glob.reset_index(drop=True)).drop(["chr", "start", "end", "strand"], axis=1)
+    df_final_zscore_glob.insert(4, "occurence", df_smoothed["occurence"])
+    df_final_zscore_glob.insert(5, "mediane", median_global.round(2))
+    df_final_zscore_glob.insert(6, "min - [Q25, Q75] - max", min_global.astype(str) + " - [" + q25_global.astype(str) + ", " + q75_global.astype(str) + "] - " + max_global.astype(str))
+
+    #df_final_tql.iloc[:,4:] = df_final_tql.iloc[:,4:].mul(100).round(2)
+
+    with pd.ExcelWriter(outdir + "/SOSTAR_annotation_table_results_smooth_zscore.xlsx") as writer:
+        df.to_excel(writer, sheet_name="exp_global", index=False)
+        df_smoothed.to_excel(writer, sheet_name="exp_global_smoothed", index=False)
+        df_final_zscore_glob.to_excel(writer, sheet_name="zscore_expglob", index=False)
+        df_final_tql.to_excel(writer, sheet_name="tql", index=False)
+        df_final_zscore_tql.to_excel(writer, sheet_name="zscore_tql", index=False)
+        
 
 
 def main():

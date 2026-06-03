@@ -53,7 +53,7 @@ rule format_gtf:
   run:
     with open(input[0], "r") as filin:
       with open(output[0], "w") as filout:
-        filout.write("# LoRID: file cleaned with bedtools intersect results\n")
+        filout.write("# SOSTAR: file cleaned with bedtools intersect results\n")
         for line in filin:
           if line.startswith("#"):
             filout.write(line)
@@ -84,7 +84,7 @@ rule add_missing_gene_name:
           geneid_gename[attributes["gene_id"]] = attributes["gene_name"]
     with open(input[0], "r") as filin:
       with open(output[0], "w") as filout:
-        filout.write("# LoRID: file cleaned up by adding missing gene names\n")
+        filout.write("# SOSTAR: file cleaned up by adding missing gene names\n")
         for line in filin:
           if line.startswith("#"):
             filout.write(line)
@@ -110,7 +110,7 @@ rule gtf_to_bed:
     chr = None
     with open(input[0], "r") as filin:
       with open(output[0], "w") as filout:
-        filout.write("# LoRID: conversion of the gtf merge file into a bed file\n")
+        filout.write("# SOSTAR: conversion of the gtf merge file into a bed file\n")
         for line in filin:
           if not line.startswith("#"):
             line = line.split()

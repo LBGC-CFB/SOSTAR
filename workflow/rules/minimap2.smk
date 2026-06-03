@@ -1,5 +1,5 @@
 rule align:
-  input: f"{config['dirs']['indir']}/{{sample}}.fastq.gz"
+  input: f"{config['dirs']['indir']}/{{sample}}.fastq"
   output: 
     bam = f"{config['dirs']['outdir']}/alignment/aligned/{{sample}}.aligned.bam",
     bai = f"{config['dirs']['outdir']}/alignment/aligned/{{sample}}.aligned.bam.bai",
@@ -10,7 +10,7 @@ rule align:
   threads: 
     config['threads']
   container:
-    "docker://nedss/lorid:latest"
+    "docker://aucam/lorid:latest"
   shell:
     """
     minimap2 \
@@ -39,7 +39,7 @@ rule align:
 
 rule realign:
   input: 
-    fastq = f"{config['dirs']['indir']}/{{sample}}.fastq.gz",
+    fastq = f"{config['dirs']['indir']}/{{sample}}.fastq",
     bed = f"{config['dirs']['outdir']}/assembly/transcripts.merged.aligned.filter.bed" if config['options']['bedtools'] else f"{config['dirs']['outdir']}/assembly/transcripts.merged.aligned.all.bed"
   output: 
     bam = f"{config['dirs']['outdir']}/alignment/realigned/{{sample}}.realigned.bam",
@@ -51,7 +51,7 @@ rule realign:
   threads:
     config['threads']
   container:
-    "docker://nedss/lorid:latest"
+    "docker://aucam/lorid:latest"
   shell:
     """
     minimap2 \
